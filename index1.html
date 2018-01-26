@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html>
+<link rel="stylesheet" type="text/css" href="mystyle.css">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+<style>
+  #b1 {
+    background-color: black;
+  }
+
+  #header {
+    top: 0;
+    left: 0;
+    position: fixed;
+    opacity: 1;
+    background-color: black;
+    width: 100%;
+    text-align: center;
+    vertical-align: top;
+    color: white;
+    font-size: x-large;
+    font-family: sans-serif;
+    font-weight: 900;
+    z-index: 2;
+    height: 5%;
+    box-shadow: 0px -1px 20px 0px black;
+  }
+
+  #searchbox:focus {
+    width: 22%;
+    border-color: cyan;
+    background-color: white;
+  }
+
+  #searchbox {
+    border-radius: 20px;
+    padding-left: 14px;
+    padding-right: 7px;
+    padding-top: 5px;
+    padding-bottom: 4px;
+    border-color: white;
+    background-color: floralwhite;
+    border-width: 1px;
+    border-color: transparent;
+    vertical-align: middle;
+    width: 20%;
+    transition: width 100ms linear;
+    color: black;
+    outline-color: transparent;
+    left: 1%;
+    top: 15%;
+    position: absolute;
+  }
+
+  table {
+    width: 100%;
+    box-shadow: 0px 3px 20px 0px black;
+  }
+
+  .headericon {
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+  }
+
+  tr#trr:hover {
+    height: 0%;
+  }
+
+  tr#trr {
+    height: 100%;
+    transition: all 1s ease-in-out;
+  }
+
+  .menu:active {
+    transform: scale(0.9);
+  }
+
+  .menu {
+    background-image: url(media/menu.png);
+    width: 25px;
+    height: 31px;
+    filter: invert();
+    background-position: left;
+    background-size: contain;
+    background-repeat: no-repeat;
+    color: transparent;
+    position: absolute;
+    right: 0%;
+    top: 10%;
+    transition-duration: 200ms;
+    transition-property: transform;
+  }
+
+  .player {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 15%;
+    z-index: 2;
+    opacity: 0.6;
+    background-color: black;
+  }
+
+  .controls {
+    position: absolute;
+    top: 50%;
+    width: 100%;
+    height: 50px;
+  }
+
+  #next {
+    position: fixed;
+    filter: invert();
+    border-width: 0;
+    border-color: black;
+    background: url('media/ff.png');
+    background-repeat: none;
+    background-position-x: 3px;
+    width: 50px;
+    height: 50px;
+    outline-color: transparent;
+    left: 60%;
+    transition: all 0.2s;
+  }
+
+  #prev {
+    position: fixed;
+    filter: invert();
+    border-width: 0;
+    border-color: black;
+    background: url('media/rewind.png');
+    background-repeat: none;
+    background-position-x: 3px;
+    width: 50px;
+    height: 50px;
+    outline-color: transparent;
+    padding-right: 10px;
+    left: 40%;
+    transition: all 0.2s;
+  }
+
+  #play {
+    position: fixed;
+    filter: invert();
+    border-width: 0;
+    border-color: black;
+    background: url('media/play.png');
+    background-repeat: none;
+    background-position-x: 3px;
+    width: 50px;
+    height: 50px;
+    outline-color: transparent;
+    left: 50%;
+    transition: all 0.2s;
+  }
+
+  button:hover {
+    transform: scale(1.1)
+  }
+
+  .menus {
+    height: 80.2%;
+    width: -webkit-fill-available;
+    left: 0;
+    top: 5%;
+    position: absolute;
+    background: black;
+    opacity: 0.9;
+    display: none;
+    z-index: 2;
+  }
+
+  .blur1 {
+    width: 100%;
+    height: 100%;
+    left: 0px;
+    top: 0px;
+    position: absolute;
+    background-color: black;
+    background-repeat: no-repeat;
+    z-index: 0;
+    background-size: cover;
+    filter: brightness(250%) saturate(600%) contrast(150%) blur(56px);
+  }
+
+  .blur2 {
+    width: 100%;
+    height: 100%;
+    left: 0px;
+    top: 0px;
+    position: absolute;
+    background-color: black;
+    background-repeat: no-repeat;
+    z-index: 1;
+    opacity: 0.4;
+    /* filter: brightness(61%); */
+  }
+
+  .stack {
+    position: fixed;
+    /* max-width: 200px; */
+    /* min-width: 100px; */
+    width: 100%;
+    height: 84%;
+    /* max-height: 200px; */
+    /* min-height: 100px; */
+    /* top: 7%; */
+    left: 0%;
+    opacity: 0.6;
+    background-color: white;
+    border-color: blue;
+    border-width: thin;
+    border-style: solid;
+  }
+</style>
+
+<body id="b1">
+  <div id="header">
+    <table border="0">
+  
+      <tr>
+        <td style="width:33%">
+          <input type="text" id="searchbox" class="search" placeholder="Search">
+        WEBS
+          <div class="menu" id="menu"></div>
+        </td>
+      </tr>
+    </table>
+  </div>
+  </div>
+  <div class="menus" id="menus">
+  </div>
+  <DIV class="blur2">
+  <div class="blur1" id="blur1"></div>
+  </DIV>
+  <div class="stack">
+  </div>
+  <div id="player" class="player">
+    <div id="controls" class="controls">
+      <button id="prev" onclick="playprev()"></button>
+      <button id="play"></button>
+      <button id="next" onclick="playnext()"></button>
+    </div>
+  </div>
+</body>
+<script>
+  $(document).ready(function () {
+    $("#play").click(
+      function () {
+        $('#blur1').fadeTo('slow', 0, function () {
+          $(this).css('background-image', "url('media/cover/1.jpg'");
+        }).delay(1000).stop(true, true).fadeTo('slow', 1);
+      }),
+      $("#menu").click(
+        function () {
+          $("#searchbox").stop(true, false).fadeToggle("1s")
+          $("#menus").slideToggle("1s")
+        })
+  });
+
+</script>
+
+</html>
