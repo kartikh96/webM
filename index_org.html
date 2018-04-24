@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+        <style>
+                #menulinks li {
+                        display: inline;
+                }
+        </style>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+        <script>
+                var db;
+                var dbrequest;
+
+                function onInitBody() {
+                        if (dbrequest == undefined) {
+                                dbrequest = indexedDB.open("MyDB", 1);
+                                dbrequest.onsuccess = function (event) {
+                                        console.log(" Opened DB.");
+                                }
+                                dbrequest.onerror = function (event) {
+                                        console.log("DBrequest Failed.");
+                                }
+
+                                dbrequest.onupgradeneeded = function (event) {
+                                        console.log("Running onupgradeneeded");
+
+                                        db = event.target.result;
+                                        if (!db.objectStoreNames.contains("Resources")) {
+                                                var objectstore = db.createObjectStore("Resources");
+                                        }
+                                        if (!db.objectStoreNames.contains("LocalList")) {
+                                                var LocalList = db.createObjectStore('LocalList', { keyPath: 'id' });
+                                                LocalList.createIndex('Title', 'Title');
+                                                LocalList.createIndex('Album', 'Album');
+                                                LocalList.createIndex('Artist', 'Artist');
+                                                LocalList.createIndex('Length', 'Length');
+                                                LocalList.createIndex('Env', 'Env');
+                                        }
+                                        if (!db.objectStoreNames.contains("Thumbnails")) {
+                                                var objectstore = db.createObjectStore("Thumbnails");
+                                        }
+                                }
+                        }
+                        return dbrequest;
+                }
+                function middleManMetaAndUList(id) {
+                        var listbox = document.getElementById("metaimglist");
+                        listbox.value = id;
+                        showImage(0);
+                }
+                function showImage(operation) {
+
+                        var listbox = document.getElementById("metaimglist");
+                        var img = document.getElementById('base');
+                        var i = listbox.selectedIndex;
+
+                        console.log("Len = " + listbox.length);
+                        console.log("Sel ind=" + i);
+
+                        if (operation == 1) {
+                                i = i + 1;
+                                document.getElementById("play").value = "||";
+                                if (i >= listbox.length) {
+                                        return;
+                                }
+                        }
+                        else if (operation == -1) {
+                                i = i - 1;
+                                document.getElementById("play").value = "||";
+                                if (i < 0) {
+                                        return;
+                                }
+                        }
+                        else {
+                                if (i < 0 || i > listbox.length) {
+                                        return;
+                                }
+                                if (document.getElementById("play").value == "||") {
+                                        //     img.pause();
+                                        document.getElementById("play").value = ">";
+                                        return;
+                                }
+                                else {
+                                        //     img.play();
+                                        document.getElementById("play").value = ">";
+                                        return;
+
+                                }
+                        }
+                        listbox.selectedIndex = i;
+                        var a = listbox.selectedOptions[0].value;
+
+
+
+                        dbrequest = onInitBody();
+                        dbrequest.onsuccess = function (e) {
+                                console.log(e);
+                                console.log("Upgrade successful.");
+                        }
+                        if (dbrequest.readyState == "done") {
+                                db = dbrequest.result;
+                                var trans = db.transaction("Resources", "readonly");
+                                trans.onsuccess = function (event) {
+                                }
+
+                                var request = trans.objectStore("Resources");
+                                var objectStoreRequest = request.get(a);
+
+                                objectStoreRequest.onsuccess = function (event) {
+                                        var mycount = objectStoreRequest.result;
+                                        if (mycount != undefined) {
+                                                console.log(" Loading Asset from Local Db.");
+                                                img.src = window.URL.createObjectURL(event.target.result);
+
+
+                                                // if (playPromise !== undefined) {
+                                                //         playPromise.then(_ => {
+                                                //                 document.getElementById("playpause").innerHTML = "||";
+                                                //         }).catch(error => {
+                                                //                 document.getElementById("playpause").innerHTML = ">";
+                                                //         });
+                                                // }
+                                        }
+                                        else {
+                                                console.log(" Loading Asset from Network.");
+                                                var xhttp = new XMLHttpRequest();
+                                                xhttp.onreadystatechange = function () {
+                                                        if (this.readyState == 4 && this.status == 200) {
+                                                                var resources = db.transaction("Resources", "readwrite").objectStore("Resources");
+                                                                var b = new Blob(this.response, { type: "audio/mpeg" });
+                                                                resources.add(b, a);
+                                                                //document.getElementById("output").innerHTML = this.response;
+                                                                var img = document.getElementById("base");
+                                                                var url = window.URL;
+                                                                console.log(url);
+                                                                img.src = url.createObjectURL(this.response);
+                                                                //  img.play();
+                                                        }
+                                                };
+                                                xhttp.open("GET", "/assets/" + a, true);
+                                                xhttp.responseType = "blob";
+                                                xhttp.send();
+                                        }
+                                }
+                        }
+                        getinfo(a);
+                }
+                function changeBackground(url) {
+                        $('#blur1').fadeTo('slow', 0, function () {
+                                $(this).css('background-image', "url('" + url + "')");
+                        }).delay(1000).stop(true, true).fadeTo('slow', 1);
+                }
+                function getImagePath(id, img) {
+                        var dbrequest = onInitBody();
+                        if (dbrequest.readyState == "done") {
+                                db = dbrequest.result;
+                                var trans = db.transaction("Thumbnails", "readonly");
+                                trans.onsuccess = function (event) {
+                                }
+
+                                var request = trans.objectStore("Thumbnails");
+                                var objectStoreRequest = request.get(id);
+
+                                objectStoreRequest.onsuccess = function (event) {
+                                        var mycount = objectStoreRequest.result;
+                                        if (mycount != undefined) {
+                                                console.log(" Loading Thumbs from Local Db.");
+                                                //var b= new Blob([event.target.result],{type:"type/png"});
+                                                var u = window.URL.createObjectURL(event.target.result);
+                                                img.src = u;
+
+                                        }
+                                        else {
+                                                console.log(" Loading Thumbs from Network.");
+                                                var xhttp = new XMLHttpRequest();
+                                                xhttp.onreadystatechange = function () {
+                                                        if (this.readyState == 4 && this.status == 200) {
+                                                                var resources = db.transaction("Thumbnails", "readwrite").objectStore("Thumbnails");
+                                                                var b = new Blob([this.response], { type: "type/png" });
+                                                                resources.add(b, id);
+                                                                img.src = window.URL.createObjectURL(b);
+
+                                                        }
+                                                };
+                                                xhttp.open("GET", "/assets/i" + id, true);
+                                                xhttp.responseType = "blob";
+                                                xhttp.send();
+                                        }
+                                }
+                        }
+                }
+
+                function AddtoControlList(cursor) {
+                        var imglist = document.getElementById('imglist');
+                        var li = document.createElement("li");
+                        var record = document.createElement("div");
+                        var img = document.createElement("img");
+                        getImagePath(cursor.id, img);
+                        var title = document.createElement("a");
+                        title.innerHTML = cursor.Title;
+                        title.href = "javascript:middleManMetaAndUList(" + cursor.id + ")";
+                        record.appendChild(img);
+                        record.appendChild(title);
+                        li.appendChild(record);
+                        imglist.appendChild(li);
+                }
+
+                function AddtoControlMetaList(cursor) {
+                        var imglist = document.getElementById('metaimglist');
+                        var opt = document.createElement('option');
+                        opt.value = cursor.id;
+                        opt.innerHTML = cursor.Title;
+                        imglist.appendChild(opt);
+                        AddtoControlList(cursor);
+                }
+
+                function loadPlaylist(id) {
+                        var dbrequest = onInitBody();
+                        dbrequest.onsuccess = function (db) {
+                                db = dbrequest.result;
+                                var trans = db.transaction("LocalList", "readonly");
+                                trans.onsuccess = function (event) {
+                                }
+
+                                var request = trans.objectStore("LocalList");
+                                if (id == undefined || id == 0) {
+                                        var objectStoreRequest = request.count();
+                                        objectStoreRequest.onsuccess = function (event) {
+                                                var mycount = objectStoreRequest.result;
+
+                                                if (mycount > 0) {
+                                                        console.log(" Loading List from Local Db.");
+                                                        var trans1 = db.transaction("LocalList", "readonly");
+                                                        trans1.onsuccess = function () {
+                                                        }
+                                                        var request1 = trans1.objectStore("LocalList");
+                                                        var objectStoreRequest1 = request1.openCursor();
+                                                        objectStoreRequest1.onsuccess = function (event1) {
+                                                                var cursor = event1.target.result;
+                                                                if (cursor) {
+                                                                        var nc = new Cursor(cursor.value.id, cursor.value.Title);
+                                                                        AddtoControlMetaList(nc);
+                                                                        cursor.continue();
+                                                                }
+                                                        }
+                                                }
+                                                else {
+                                                        console.log(" Loading List from Network.");
+                                                        var xhttp = new XMLHttpRequest();
+                                                        xhttp.onreadystatechange = function () {
+                                                                if (this.readyState == 4 && this.status == 200) {
+                                                                        var resources = db.transaction("LocalList", "readwrite").objectStore("LocalList");
+                                                                        var imglist = document.getElementById('imglist');
+                                                                        var itemData = JSON.parse(this.response);
+                                                                        for (var i = 0; i < itemData.length; i++) {
+                                                                                resources.add(itemData[i]);
+                                                                                AddtoControlMetaList(itemData[i]);
+                                                                        }
+                                                                }
+                                                        };
+                                                        xhttp.open("GET", "\list.json", true);
+                                                        xhttp.setRequestHeader("Content-Type", "application/json");
+                                                        xhttp.send();
+                                                }
+                                        }
+                                }
+
+                        }
+                        if (typeof id !== "undefined") {
+                                var imglist = document.getElementById('metaimglist');
+                                console.log(id);
+
+                                var exists = false;
+                                for (var i = 0; i < imglist.length; i++) {
+                                        if (imglist[i].value == id) {
+                                                exists = true;
+                                                middleManMetaAndUList(i);
+                                                break;
+                                        }
+                                }
+                                if (!exists) {
+                                        var cursor = new Cursor();
+                                        cursor.id = id;
+                                        cursor.Title = document.getElementById("ItemId" + id).children["ItemTitle"].innerHTML;
+                                        cursor.Album = document.getElementById("ItemId" + id).children["ItemAlbum"].innerHTML;
+                                        cursor.Artist = document.getElementById("ItemId" + id).children["ItemArtist"].innerHTML;
+                                        cursor.Length = document.getElementById("ItemId" + id).children["ItemLength"].innerHTML;
+                                        cursor.Env = document.getElementById("ItemId" + id).children["ItemEnv"].innerHTML;
+                                        AddtoControlMetaList(cursor);
+                                        saveListToLocal(cursor);
+                                        middleManMetaAndUList(id);
+                                }
+                        }
+                }
+
+                function saveListToLocal(cursor) {
+                        var dbrequest = onInitBody();
+                        if (dbrequest.readyState == "done") {
+                                db = dbrequest.result;
+                                if (!(typeof cursor == undefined || cursor.id == 0)) {
+                                        console.log(" Saving Rercord to Local Db.");
+                                        var resources = db.transaction("LocalList", "readwrite").objectStore("LocalList");
+                                        var newItem = [{ id: cursor.id, Title: cursor.Title, Album: cursor.Album, Length: cursor.Length, Env: cursor.Env, Artist: cursor.Artist }];
+                                        resources.add(newItem[0]);
+                                }
+                        }
+                }
+                function Cursor(id, Title, Album, Artist, Length, Env) {
+                        var classname = 'Cursor';
+                        this.id = id;
+                        this.Title = Title;
+                        this.Album = Album;
+                        this.Artist = Artist;
+                        this.Length = Length;
+                        this.Env = Env;
+                        this.run = function () {
+                                console.log(this.id + ' runs and runs!');
+                        }
+                        this.info = function () {
+                                console.log(this.id + ' is a ' + this.Title + ' ' + classname);
+                        }
+                }
+                function getinfo(id) {
+
+                        var dbrequest = onInitBody();
+                        var title = document.getElementById("title");
+                        var info = document.getElementById("listORinfo");
+                        info.innerHTML = "";
+                        if (dbrequest.readyState == "done") {
+
+                                db = dbrequest.result;
+                                var trans1 = db.transaction("LocalList", "readonly");
+                                trans1.onsuccess = function () {
+                                }
+                                var request1 = trans1.objectStore("LocalList");
+                                var objectStoreRequest1 = request1.get(parseInt(id));
+                                objectStoreRequest1.onsuccess = function (event1) {
+                                        var cursor = objectStoreRequest1.result;
+                                        if (cursor != undefined) {
+
+                                                info.innerHTML = cursor.Title + "<br>" + cursor.Album + "<br>" + cursor.Artist + "<br>" + cursor.Length + "<br>" + cursor.Env;
+                                                var img = document.createElement("img");
+                                                getImagePath(cursor.id, img);
+                                                img.onload = function () { document.getElementById("thumbimg").src = img.src; changeBackground(img.src); };
+                                                info.insertAdjacentElement('afterbegin', img);
+                                                title.innerHTML = cursor.Title + "<br>" + cursor.Album + "<br>" + cursor.Artist + "<br>" + cursor.Length + "<br>" + cursor.Env;
+                                        }
+                                }
+                        }
+
+                }
+
+                function linkfunction(link) {
+                        console.log(" Loading " + link + " from Network.");
+                        var xhttp = new XMLHttpRequest();
+                        xhttp.onreadystatechange = function () {
+                                if (this.readyState == 4 && this.status == 200) {
+                                        var listORinfo = document.getElementById('listORinfo');
+                                        listORinfo.innerHTML = "";
+                                        var itemData = JSON.parse(this.response);
+
+                                        for (var i = 0; i < itemData.length; i++) {
+                                                var div = document.createElement("div")
+                                                div.id = "ItemId" + itemData[i].id;
+
+                                                var img = document.createElement("img");
+                                                getImagePath(itemData[i].id, img);
+                                                div.appendChild(img);
+                                                div.appendChild(document.createElement("br"));
+
+                                                var anc = document.createElement("a");
+                                                anc.href = "javascript:loadPlaylist(" + itemData[i].id + ")";
+                                                anc.text = itemData[i].Title;
+                                                anc.id = "ItemTitle";
+                                                div.appendChild(anc);
+                                                div.appendChild(document.createElement("br"));
+
+                                                anc = document.createElement("a");
+                                                anc.href = "javascript:loadPlaylist(" + itemData[i].id + ")";
+                                                anc.text = itemData[i].Album;
+                                                anc.id = "ItemAlbum";
+                                                anc.style = "font-size:10px";
+                                                div.appendChild(anc);
+                                                div.appendChild(document.createTextNode(" "));
+
+                                                anc = document.createElement("a");
+                                                anc.href = "javascript:loadPlaylist(" + itemData[i].id + ")";
+                                                anc.text = itemData[i].Length;
+                                                anc.id = "ItemLength";
+                                                anc.style = "font-size:10px";
+                                                div.appendChild(anc);
+                                                div.appendChild(document.createTextNode(" "));
+
+                                                anc = document.createElement("a");
+                                                anc.href = "javascript:loadPlaylist(" + itemData[i].id + ")";
+                                                anc.text = itemData[i].Artist;
+                                                anc.id = "ItemArtist";
+                                                anc.style = "font-size:10px";
+                                                div.appendChild(anc);
+                                                div.appendChild(document.createTextNode(" "));
+
+                                                anc = document.createElement("a");
+                                                anc.href = "javascript:loadPlaylist(" + itemData[i].id + ")";
+                                                anc.text = itemData[i].Env;
+                                                anc.id = "ItemEnv";
+                                                anc.style = "font-size:10px";
+                                                div.appendChild(anc);
+
+                                                listORinfo.appendChild(div);
+                                        }
+                                }
+                        };
+                        xhttp.open("GET", '/' + link, true);
+                        xhttp.setRequestHeader("Content-Type", "application/json");
+                        xhttp.send();
+                }
+
+
+        </script>
+        <link rel="stylesheet" type="text/css" href="styles.css">
+</head>
+
+<body id="b1" onload="loadPlaylist()">
+        <div>
+                <table border="1">
+
+                        <tr>
+                                <td>
+                                        <span id="Heading">WEBS</span>
+                                </td>
+                                <td>
+                                        <ul id="menulinks">
+                                                <li>
+                                                        <a href="javascript:linkfunction('link1')">Link 1</a>
+                                                </li>
+                                                <li>Link 2</li>
+                                                <li>Link 3</li>
+                                                <li>Link 4</li>
+                                        </ul>
+                                </td>
+                                <td>
+                                        <input type="text" id="searchbox" class="search" placeholder="Search">
+                                </td>
+                        </tr>
+                </table>
+        </div>
+        </div>
+
+
+        <div id="player" class="player">
+                <img id="thumbimg">
+                <p id="title">Select</p>
+                <div id="controls" class="controls">
+                        <audio controls id="base">
+                                <source src="" type="audio/mp3"> Your browser does not support the audio tag.
+                        </audio>
+
+                        <button id="prev" onclick="showImage(-1)">Prev</button>
+                        <input type="submit" id="play" onclick="showImage(0)" value=">" />
+                        <button id="next" onclick="showImage(1)">Next</button>
+                </div>
+        </div>
+</body>
+
+</html>
