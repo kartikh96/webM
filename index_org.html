@@ -2,6 +2,7 @@
 <html>
 
 <head>
+
         <style>
                 #menulinks li {
                         display: inline;
@@ -11,7 +12,7 @@
         <script>
                 var db;
                 var dbrequest;
-
+                var SelectedId;
                 function onInitBody() {
                         if (dbrequest == undefined) {
                                 dbrequest = indexedDB.open("MyDB", 1);
@@ -46,7 +47,7 @@
                 }
                 function middleManMetaAndUList(id) {
                         var listbox = document.getElementById("metaimglist");
-                        listbox.value = id;
+                        SelectedId = id;
                         showImage(0);
                 }
                 function showImage(operation) {
@@ -57,10 +58,14 @@
 
                         console.log("Len = " + listbox.length);
                         console.log("Sel ind=" + i);
-
+                        if (i == -1) {
+                                operation = 1;
+                        }
                         if (operation == 1) {
                                 i = i + 1;
                                 document.getElementById("play").value = "||";
+                                listbox.selectedIndex = i;
+
                                 if (i >= listbox.length) {
                                         return;
                                 }
@@ -68,6 +73,8 @@
                         else if (operation == -1) {
                                 i = i - 1;
                                 document.getElementById("play").value = "||";
+                                listbox.selectedIndex = i;
+
                                 if (i < 0) {
                                         return;
                                 }
@@ -76,19 +83,22 @@
                                 if (i < 0 || i > listbox.length) {
                                         return;
                                 }
-                                if (document.getElementById("play").value == "||") {
-                                        //     img.pause();
-                                        document.getElementById("play").value = ">";
+                                if (listbox.selectedOptions[0].value == SelectedId) {
+                                        if (document.getElementById("play").value == "||") {
+                                                document.getElementById("play").value = ">";
+                                                //     img.pause();
+                                        }
+                                        else {
+                                                document.getElementById("play").value = "||";
+                                                //     img.play();
+                                        }
                                         return;
                                 }
                                 else {
-                                        //     img.play();
-                                        document.getElementById("play").value = ">";
-                                        return;
-
+                                        document.getElementById("play").value = "||";
+                                        listbox.value = SelectedId;
                                 }
                         }
-                        listbox.selectedIndex = i;
                         var a = listbox.selectedOptions[0].value;
 
 
@@ -145,6 +155,7 @@
                                 }
                         }
                         getinfo(a);
+
                 }
                 function changeBackground(url) {
                         $('#blur1').fadeTo('slow', 0, function () {
@@ -196,6 +207,8 @@
                         var li = document.createElement("li");
                         var record = document.createElement("div");
                         var img = document.createElement("img");
+                        img.style.width = "10px";
+                        img.style.height = "10px";
                         getImagePath(cursor.id, img);
                         var title = document.createElement("a");
                         title.innerHTML = cursor.Title;
@@ -338,20 +351,22 @@
                                 objectStoreRequest1.onsuccess = function (event1) {
                                         var cursor = objectStoreRequest1.result;
                                         if (cursor != undefined) {
-
-                                                info.innerHTML = cursor.Title + "<br>" + cursor.Album + "<br>" + cursor.Artist + "<br>" + cursor.Length + "<br>" + cursor.Env;
-                                                var img = document.createElement("img");
-                                                getImagePath(cursor.id, img);
-                                                img.onload = function () { document.getElementById("thumbimg").src = img.src; changeBackground(img.src); };
+                                                //info.innerHTML =relatedrecords();
+                                                // var img = document.createElement("img");
+                                                // img.style.width = "10px";
+                                                // img.style.height = "10px";
+                                                // getImagePath(cursor.id, img);
+                                                // img.onload = function () { document.getElementById("thumbimg").src = img.src; changeBackground(img.src); };
+                                                createMetaDiv(id, cursor.Title, "Artist: " + cursor.Artist, "Album: " + cursor.Album);
                                                 info.insertAdjacentElement('afterbegin', img);
-                                                title.innerHTML = cursor.Title + "<br>" + cursor.Album + "<br>" + cursor.Artist + "<br>" + cursor.Length + "<br>" + cursor.Env;
+                                                title.innerHTML = cursor.Title + " Album:" + cursor.Album + " Artist:" + cursor.Artist;
                                         }
                                 }
                         }
 
                 }
 
-                function linkfunction(link) {
+                function linkfunction(link, id) {
                         console.log(" Loading " + link + " from Network.");
                         var xhttp = new XMLHttpRequest();
                         xhttp.onreadystatechange = function () {
@@ -360,55 +375,13 @@
                                         listORinfo.innerHTML = "";
                                         var itemData = JSON.parse(this.response);
 
-                                        for (var i = 0; i < itemData.length; i++) {
-                                                var div = document.createElement("div")
-                                                div.id = "ItemId" + itemData[i].id;
-
-                                                var img = document.createElement("img");
-                                                getImagePath(itemData[i].id, img);
-                                                div.appendChild(img);
-                                                div.appendChild(document.createElement("br"));
-
-                                                var anc = document.createElement("a");
-                                                anc.href = "javascript:loadPlaylist(" + itemData[i].id + ")";
-                                                anc.text = itemData[i].Title;
-                                                anc.id = "ItemTitle";
-                                                div.appendChild(anc);
-                                                div.appendChild(document.createElement("br"));
-
-                                                anc = document.createElement("a");
-                                                anc.href = "javascript:loadPlaylist(" + itemData[i].id + ")";
-                                                anc.text = itemData[i].Album;
-                                                anc.id = "ItemAlbum";
-                                                anc.style = "font-size:10px";
-                                                div.appendChild(anc);
-                                                div.appendChild(document.createTextNode(" "));
-
-                                                anc = document.createElement("a");
-                                                anc.href = "javascript:loadPlaylist(" + itemData[i].id + ")";
-                                                anc.text = itemData[i].Length;
-                                                anc.id = "ItemLength";
-                                                anc.style = "font-size:10px";
-                                                div.appendChild(anc);
-                                                div.appendChild(document.createTextNode(" "));
-
-                                                anc = document.createElement("a");
-                                                anc.href = "javascript:loadPlaylist(" + itemData[i].id + ")";
-                                                anc.text = itemData[i].Artist;
-                                                anc.id = "ItemArtist";
-                                                anc.style = "font-size:10px";
-                                                div.appendChild(anc);
-                                                div.appendChild(document.createTextNode(" "));
-
-                                                anc = document.createElement("a");
-                                                anc.href = "javascript:loadPlaylist(" + itemData[i].id + ")";
-                                                anc.text = itemData[i].Env;
-                                                anc.id = "ItemEnv";
-                                                anc.style = "font-size:10px";
-                                                div.appendChild(anc);
-
-                                                listORinfo.appendChild(div);
+                                        var i = 0, t = 0;
+                                        for (i = 0; i < itemData.length; i++) {
+                                                createRecordDiv(new Cursor(itemData[i].id, itemData[i].Title, itemData[i].Album, itemData[i].Artist, itemData[i].Length, itemData[i].Env));
+                                                t = t + parseInt(itemData[i].Length);
                                         }
+
+                                        createMetaDiv(id, "Top Records", "Items: " + i, "Time: " + t + " Units");
                                 }
                         };
                         xhttp.open("GET", '/' + link, true);
@@ -416,50 +389,177 @@
                         xhttp.send();
                 }
 
+                function createMetaDiv(id, Title, TotolCount, TotalTime) {
 
+                        document.getElementById("consoleMetaDataTitle").innerHTML = Title;
+                        document.getElementById("consoleMetaDataCount").innerHTML = TotalTime;
+                        document.getElementById("consoleMetaDataTime").innerHTML = TotolCount;
+                        getImagePath(id, document.getElementById("consoleMetaImg"));
+                }
+                function createRecordDiv(cursor) {
+
+                        var div = document.createElement("div")
+                        div.id = "ItemId" + cursor.id;
+                        //div.style.width = "100%";
+                        div.style.height = "60px";
+                        div.style.borderStyle = "solid";
+                        div.style.borderWidth = "1px";
+                        div.style.borderColor = "lightgrey";
+                        div.style.padding = "10px";
+
+                        var imgdiv = document.createElement("div")
+                        imgdiv.style.padding = "5px";
+                        imgdiv.style.cssFloat = "left";
+                        var img = document.createElement("img");
+                        getImagePath(cursor.id, img);
+                        img.style.width = "45px";
+                        img.style.height = "45px";
+                        img.style.borderStyle = "solid";
+                        img.style.borderWidth = "1px";
+                        img.style.borderColor = "lightgrey";
+                        imgdiv.appendChild(img);
+
+                        div.appendChild(imgdiv);
+
+                        var infodiv = document.createElement("div")
+                        infodiv.style.padding = "5px";
+                        infodiv.style.cssFloat = "left";
+                        var anc = document.createElement("a");
+                        anc.href = "javascript:loadPlaylist(" + cursor.id + ")";
+                        anc.text = cursor.Title;
+                        anc.id = "ItemTitle";
+                        infodiv.appendChild(anc);
+                        infodiv.appendChild(document.createElement("br"));
+
+                        anc = document.createElement("a");
+                        anc.href = "javascript:loadPlaylist(" + cursor.id + ")";
+                        anc.text = cursor.Album;
+                        anc.id = "ItemAlbum";
+                        anc.style = "font-size:10px";
+                        infodiv.appendChild(anc);
+                        infodiv.appendChild(document.createTextNode(" "));
+
+                        anc = document.createElement("a");
+                        anc.href = "javascript:loadPlaylist(" + cursor.id + ")";
+                        anc.text = cursor.Length;
+                        anc.id = "ItemLength";
+                        anc.style = "font-size:10px";
+                        infodiv.appendChild(anc);
+                        infodiv.appendChild(document.createTextNode(" "));
+
+                        anc = document.createElement("a");
+                        anc.href = "javascript:loadPlaylist(" + cursor.id + ")";
+                        anc.text = cursor.Artist;
+                        anc.id = "ItemArtist";
+                        anc.style = "font-size:10px";
+                        infodiv.appendChild(anc);
+                        infodiv.appendChild(document.createTextNode(" "));
+
+                        anc = document.createElement("a");
+                        anc.href = "javascript:loadPlaylist(" + cursor.id + ")";
+                        anc.text = cursor.Env;
+                        anc.id = "ItemEnv";
+                        anc.style = "font-size:10px";
+                        infodiv.appendChild(anc);
+                        div.appendChild(infodiv);
+                        listORinfo.appendChild(div);
+                }
         </script>
         <link rel="stylesheet" type="text/css" href="styles.css">
 </head>
 
-<body id="b1" onload="loadPlaylist()">
+<body id="wall" onload="loadPlaylist()">
+        <DIV class="blur2">
+                <div class="thumb-wall" id="blur1"></div>
+        </DIV>
         <div>
-                <table border="1">
+                <table border="1" id="Header" class="top-bar">
 
                         <tr>
-                                <td>
+                                <td style="width:30%">
                                         <span id="Heading">WEBS</span>
                                 </td>
+
+                                <td style="width:30%">
+                                        <input type="text" id="searchbox" class="top-searchbox" placeholder="Search">
+                                </td>
                                 <td>
-                                        <ul id="menulinks">
+                                        <ul id="menulinks" class="top-links">
                                                 <li>
-                                                        <a href="javascript:linkfunction('link1')">Link 1</a>
+                                                        <a href="javascript:linkfunction('link1',100)">Link 1</a>
                                                 </li>
                                                 <li>Link 2</li>
                                                 <li>Link 3</li>
                                                 <li>Link 4</li>
                                         </ul>
                                 </td>
-                                <td>
-                                        <input type="text" id="searchbox" class="search" placeholder="Search">
-                                </td>
                         </tr>
                 </table>
         </div>
+
+        <div class="user-list" style="overflow-y: scroll;">
+                <ul id="imglist"></ul>
+                <select id="metaimglist" size="20" onchange="showImage(0)" style="display: none"></select>
         </div>
 
+        <div class="centerconsole">
+                <div id="consoleMeta" class="console-Meta">
+                        <div id="consoleMetaImgDiv" class="console-MetaImgDiv">
+                                <img id="consoleMetaImg" class="console-MetaImg"/>
+                        </div>
+                        <div id="consoleMetaData" class="console-MetaData">
+                                <div id="consoleMetaDataCount"></div>
+
+                                <br>
+                                <div id="consoleMetaDataTime"></div>
+
+                                <br>
+                        </div>
+                </div>
+                <div id="consoleMetaDataTitle" class="console-MetaDataTitle"></div>
+                <div id="listORinfo" class="listORinfo-Div"></div>
+        </div>
 
         <div id="player" class="player">
-                <img id="thumbimg">
-                <p id="title">Select</p>
-                <div id="controls" class="controls">
-                        <audio controls id="base">
-                                <source src="" type="audio/mp3"> Your browser does not support the audio tag.
-                        </audio>
+                <table border=1 class="player_container">
+                        <tr>
+                                <td colspan="4">
+                                        progress bar
+                                </td>
+                        </tr>
+                        <tr>
+                                <td rowspan="3" style="width:30%">
+                                </td>
+                                <td rowspan="3" style="width:10%">
+                                        <img id="thumbimg" style="width:10px;height:10px;float:right;">
+                                </td>
+                                <td>
+                                        <p id="title">Select</p>
+                                </td>
+                                <td rowspan="3" style="width: 20%">
+                                        <button id="volume" onclick="volume">V</button>
+                                        <button id="repeat" onclick="repeat">R</button>
+                                        <button id="shuffle" onclick="shuffle">S</button>
+                                </td>
+                        </tr>
+                        <tr>
+                                <td>
+                                        <div id="controls" class="controls">
+                                                <button id="prev" onclick="showImage(-1)">P</button>
+                                                <input type="submit" id="play" onclick="showImage(0)" value=">" />
+                                                <button id="next" onclick="showImage(1)">N</button>
+                                        </div>
+                                </td>
+                        </tr>
+                        <tr>
+                                <td>
+                                        <audio controls id="base" style="display:none">
+                                                <source src="" type="audio/mp3"> Your browser does not support the audio tag.
+                                        </audio>
+                                </td>
+                        </tr>
+                </table>
 
-                        <button id="prev" onclick="showImage(-1)">Prev</button>
-                        <input type="submit" id="play" onclick="showImage(0)" value=">" />
-                        <button id="next" onclick="showImage(1)">Next</button>
-                </div>
         </div>
 </body>
 
