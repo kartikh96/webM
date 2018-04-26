@@ -1,0 +1,64 @@
+variables with global access
+function to interact with Localstorage(Inddexed,wsql,cookie,session)
+function with root HTML template
+function to insert .HTML template into root
+function to generate html node
+function to search node
+	--function to get child nodes of given parent ID
+	--function to get parent nodes of given child ID
+function to generate automatic element ID 
+function to remove node
+a way create basic project object like(student,person,car etc)
+a global way to import external .HTML file template 
+a way to provide data to .HTML file which will then render it
+a way to print every log on console
+.HTML template will have its own JS
+.HTML template can import other .HTML template - use a standard tag
+.HTML template can also be mere JS code but must have at least one HTML tag
+replacing user defined tag with standard HTML tag at last in root template.
+
+
+#core.js
+	
+	loadroottemplate()
+	{
+		sequence() to import child .HTML templates
+		
+		for each child.HTML 
+			
+		
+		check() for user tag 
+		replace() with standard HTML tags
+	}
+	
+	function main()
+	{
+		getrootelement();
+		initializeLocalStorage();
+		loadroottemplate() into  rootelement;
+	}	
+
+
+#root HTML	
+<HTML>
+<link type"js" url="core.js">
+<script>
+<body onLoad()="main()">
+	<root></root>
+</body>
+</script>
+</HTML>
+
+#storage.json
+[picture:{
+	"id":"Int",
+	"name":"String",
+	"thumb":{"mimetype":"image/png","type":"blob"}
+}]
+
+Directory Structure:
+
+--|core.js
+  |index.html
+  |root.html
+  |storage.json
